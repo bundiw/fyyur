@@ -139,8 +139,27 @@ def index():
 def venues():
     # TODO: replace with real venues data.
     #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-    data = session.query(Venue).order_by('city', 'state').join(
-        Show).all()
+    data = []
+    places = session.query(Venue).distinct("city", "state")
+    for place in places:
+        print(place.city, place.state)
+        city = place.city
+        state = place.state
+        venues = []
+        for venue in session.query(Venue).filter_by(city=city, state=state):
+            upcoming_shows = session.query(
+                Show).filter_by(venue_id=venue.id).count()
+            print(type(upcoming_shows), "good")
+            venues.append({
+                "id": venue.id,
+                "name": venue.name,
+                "num_upcoming_shows": upcoming_shows
+            })
+        data.append({
+            "city": city,
+            "state": state,
+            "venues": venues
+        })
 
     # data = [{
     #     "city": "San Francisco",
@@ -361,7 +380,7 @@ def search_artists():
     # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
     # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
     # search for "band" should return "The Wild Sax Band".
-    
+
     response = {
         "count": 1,
         "data": [{
@@ -579,7 +598,31 @@ def create_artist_submission():
 def shows():
     # displays list of shows at /shows
     # TODO: replace with real venues data.
-    data = session.query(Show).join(Venue).join(Artist)
+    data = []
+    shows = session.query(Show)
+    for show in shows:
+        venue_id = show.venue_id
+        artist_id = show.artist_id
+        start_time = show.start_time
+        obj_venue = session.query(Venue).get(venue_id)
+        venue_name = obj_venue.name
+        obj_artist = session.query(Artist).get(artist_id)
+        art_name = obj_artist.name
+        artist_image_link = obj_artist.image_link
+        data.append({
+            "venue_id": venue_id,
+            "venue_name": venue_name,
+            "artist_id": artist_id,
+            "artist_name": art_name,
+            "artist_image_link": artist_image_link,
+            "start_time": start_time
+        })
+
+    print(data)
+    # result = dbsession.query(Shares.price,
+    #                          func.sum(Shares.quantity).label("Total sold")) \
+    #     .filter(Shares.company == 'Google') \
+    #     .group_by(Shares.price).all()
     # data = [{
     #     "venue_id": 1,
     #     "venue_name": "The Musical Hop",
