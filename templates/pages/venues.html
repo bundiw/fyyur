@@ -9,11 +9,14 @@
 			<a href="/venues/{{ venue.id }}">
 				<i class="fas fa-music"></i>
 				<div class="item">
-					<h5>{{ venue.name }}</h5>
+					<h5>{{ venue.name }}</h5> 
 				</div>
 			</a>
+			<button type="submit" class="delete-venue btn btn-danger m-10" data-id="{{venue.id}}">Delete</button>
 		</li>
 		{% endfor %}
 	</ul>
 {% endfor %}
 {% endblock %}
+
+
