@@ -2,115 +2,127 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-import json
 from os import abort
 import sys
-from urllib import response
-from xmlrpc.client import DateTime
+
 import dateutil.parser
 import babel
-from flask import Flask, jsonify, render_template, request, Response, flash, redirect, session, url_for
+from flask import (
+    Flask,
+    render_template,
+    request,
+    flash, 
+    redirect,
+    session,
+    url_for
+    )
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, create_engine
+
+from sqlalchemy import create_engine
 from forms import *
 from flask_migrate import Migrate
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import  sessionmaker
+
+from model import Artist, Show, Venue
+
 
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
 # Make the engine
 engine = create_engine(
-    "postgresql://postgres:password@localhost:5432/fyyur", future=True, echo=True)
+    "postgresql://postgres:password@localhost:5432/fyyur", 
+    future=True,
+    echo=True)
 # session = Session(bind=engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
 # Make the DeclarativeMeta
-Base = declarative_base()
+# Base = declarative_base()
 
 app = Flask(__name__)
 moment = Moment(app)
 app.config.from_object('config')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+
+
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)
 Migrate(app, db)
 
 # TODO: connect to a local postgresql database
 
 #----------------------------------------------------------------------------#
-# Models.
-#----------------------------------------------------------------------------#
+# # Models.
+# #----------------------------------------------------------------------------#
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-
-
-class Show(Base):
-    __tablename__ = 'Shows'
-    id = Column(Integer, primary_key=True)
-    venue_id = Column(Integer,  ForeignKey(
-        'Venues.id'))
-    artist_id = Column(Integer,  ForeignKey(
-        'Artists.id'))
-    start_time = Column(String(), nullable=False)
-    artist = relationship(
-        "Artist", back_populates="venues")
-    venue = relationship("Venue", back_populates="artists")
+# # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 
-class Venue(Base):
-    __tablename__ = 'Venues'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(), nullable=False)
-    city = Column(String(120), nullable=False)
-    state = Column(String(120), nullable=False)
-    address = Column(String(120), nullable=False)
-    phone = Column(String(120), nullable=False)
-    genres = Column(String(120), nullable=False)
-    image_link = Column(String(600), nullable=False)
-    facebook_link = Column(String(120), nullable=False)
-    website_link = Column(String(120), nullable=False)
-    seeking_talent = Column(Boolean(), default=False)
-    seeking_description = Column(String(300), nullable=False)
-    artists = relationship("Show",
-                           back_populates="venue", lazy="dynamic")
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
-# Venue(name="123",city= "qdf",state=" AL",address="azxscv",phone="zxc",genres= "Blues",facebook_link= "zx",image_link="zxc",website_link= "zxc v",seeking_talent=" y",seeking_description= "zaxsc")
+# class Show(Base):
+#     __tablename__ = 'Shows'
+#     id = Column(Integer, primary_key=True)
+#     venue_id = Column(Integer,  ForeignKey(
+#         'Venues.id'))
+#     artist_id = Column(Integer,  ForeignKey(
+#         'Artists.id'))
+#     start_time = Column(String(), nullable=False)
+#     artist = relationship(
+#         "Artist", back_populates="venues")
+#     venue = relationship("Venue", back_populates="artists")
 
 
-class Artist(Base):
-    __tablename__ = 'Artists'
+# class Venue(Base):
+#     __tablename__ = 'Venues'
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(), nullable=False)
-    city = Column(String(120), nullable=False)
-    state = Column(String(120), nullable=False)
-    phone = Column(String(120), nullable=False)
-    genres = Column(String(120), nullable=False)
-    image_link = Column(String(600), nullable=False)
-    facebook_link = Column(String(120), nullable=False)
-    website_link = Column(String(120), nullable=False)
-    seeking_venue = Column(Boolean, default=False)
-    seeking_description = Column(String(300), nullable=False)
-    venues = relationship(
-        "Show", back_populates="artist", lazy="dynamic")
+#     id = Column(Integer, primary_key=True)
+#     name = Column(String(), nullable=False)
+#     city = Column(String(120), nullable=False)
+#     state = Column(String(120), nullable=False)
+#     address = Column(String(120), nullable=False)
+#     phone = Column(String(120), nullable=False)
+#     genres = Column(String(120), nullable=False)
+#     image_link = Column(String(600), nullable=False)
+#     facebook_link = Column(String(120), nullable=False)
+#     website_link = Column(String(120), nullable=False)
+#     seeking_talent = Column(Boolean(), default=False)
+#     seeking_description = Column(String(300), nullable=False)
+#     artists = relationship("Show",
+#                            back_populates="venue", lazy="dynamic")
+#     # TODO: implement any missing fields, as a database migration using Flask-Migrate
+# # Venue(name="123",city= "qdf",state=" AL",address="azxscv",phone="zxc",genres= "Blues",facebook_link= "zx",image_link="zxc",website_link= "zxc v",seeking_talent=" y",seeking_description= "zaxsc")
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+# class Artist(Base):
+#     __tablename__ = 'Artists'
+
+#     id = Column(Integer, primary_key=True)
+#     name = Column(String(), nullable=False)
+#     city = Column(String(120), nullable=False)
+#     state = Column(String(120), nullable=False)
+#     phone = Column(String(120), nullable=False)
+#     genres = Column(String(120), nullable=False)
+#     image_link = Column(String(600), nullable=False)
+#     facebook_link = Column(String(120), nullable=False)
+#     website_link = Column(String(120), nullable=False)
+#     seeking_venue = Column(Boolean, default=False)
+#     seeking_description = Column(String(300), nullable=False)
+#     venues = relationship(
+#         "Show", back_populates="artist", lazy="dynamic")
+
+# TODO: implement any missing fields, as a database migration using Flask-Migrate
 
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
 
 
-Base.metadata.create_all(engine)
-session.commit()
+# Base.metadata.create_all(engine)
+# session.commit()
 
 
 def format_datetime(value, format='medium'):

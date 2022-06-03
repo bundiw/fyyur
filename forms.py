@@ -1,17 +1,30 @@
+
+from dataclasses import field
 from datetime import datetime
+from email import message
 from wsgiref.validate import validator
 
 
 from flask_wtf import Form
-from wtforms import StringField, validators,  SelectField, SelectMultipleField, DateTimeField, BooleanField
-from wtforms.validators import DataRequired, AnyOf, URL
+from sqlalchemy import values
+
+from wtforms import (
+        StringField,
+        URLField,
+        SelectField, 
+        SelectMultipleField,
+        DateTimeField,
+        BooleanField,
+        IntegerField
+        )
+from wtforms.validators import DataRequired, Length, URL, NumberRange
 
 
 class ShowForm(Form):
-    artist_id = StringField(
+    artist_id = IntegerField(
         'artist_id'
     )
-    venue_id = StringField(
+    venue_id = IntegerField(
         'venue_id'
     )
     start_time = DateTimeField(
@@ -23,10 +36,10 @@ class ShowForm(Form):
 
 class VenueForm(Form):
     name = StringField(
-        'name', validators=[DataRequired()]
+        'name', validators=[DataRequired(), Length(min=4)]
     )
     city = StringField(
-        'city', validators=[DataRequired()]
+        'city', validators=[DataRequired(), Length(min=3)]
     )
     state = SelectField(
         'state', validators=[DataRequired()],
@@ -85,12 +98,12 @@ class VenueForm(Form):
         ]
     )
     address = StringField(
-        'address', validators=[DataRequired()]
+        'address', validators=[DataRequired(), Length(min=4)]
     )
-    phone = StringField(
-        'phone'
+    phone = IntegerField(
+        'phone', validators=[DataRequired(), NumberRange(min=10000000, message='Please enter a valid Phone Number')]
     )
-    image_link = StringField(
+    image_link = URLField(
         'image_link'
     )
     genres = SelectMultipleField(
@@ -118,26 +131,26 @@ class VenueForm(Form):
             ('Other', 'Other'),
         ]
     )
-    facebook_link = StringField(
+    facebook_link = URLField(
         'facebook_link', validators=[URL()]
     )
-    website_link = StringField(
+    website_link = URLField(
         'website_link'
     )
 
     seeking_talent = BooleanField('seeking_talent')
 
     seeking_description = StringField(
-        'seeking_description'
+        'seeking_description', validators=[Length(max=300)]
     )
 
 
 class ArtistForm(Form):
     name = StringField(
-        'name', validators=[DataRequired()]
+        'name', validators=[DataRequired(), Length(min=4)]
     )
     city = StringField(
-        'city', validators=[DataRequired()]
+        'city', validators=[DataRequired(), Length(min=3)]
     )
     state = SelectField(
         'state', validators=[DataRequired()],
@@ -195,11 +208,11 @@ class ArtistForm(Form):
             ('WY', 'WY'),
         ]
     )
-    phone = StringField(
+    phone = IntegerField(
         # TODO implement validation logic for state
-        'phone'
+        'phone', validators=[NumberRange(min=10000000, max=100000000000)]
     )
-    image_link = StringField(
+    image_link = URLField(
         'image_link'
     )
     genres = SelectMultipleField(
@@ -226,20 +239,16 @@ class ArtistForm(Form):
             ('Other', 'Other'),
         ]
     )
-    facebook_link = StringField(
+    facebook_link = URLField(
         # TODO implement enum restriction
-        'facebook_link', validators=[URL()]
-    )
+        'facebook_link')
 
-    website_link = StringField(
+    website_link = URLField(
         'website_link'
     )
 
     seeking_venue = BooleanField('seeking_venue')
 
     seeking_description = StringField(
-        'seeking_description'
+        'seeking_description', validators=[Length(max=300)]
     )
-
-
-
