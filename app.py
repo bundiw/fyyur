@@ -11,118 +11,40 @@ from flask import (
     Flask,
     render_template,
     request,
-    flash, 
+    flash,
     redirect,
     session,
     url_for
-    )
+)
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
 
-from sqlalchemy import create_engine
+from sqlalchemy import desc, null
 from forms import *
-from flask_migrate import Migrate
-from sqlalchemy.orm import  sessionmaker
+from sqlalchemy.orm import sessionmaker
 
-from model import Artist, Show, Venue
+from model import (
+    Artist,
+    Show,
+    Venue,
+    app,
+    engine
+)
 
 
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
 # Make the engine
-engine = create_engine(
-    "postgresql://postgres:password@localhost:5432/fyyur", 
-    future=True,
-    echo=True)
+
 # session = Session(bind=engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
-# Make the DeclarativeMeta
-# Base = declarative_base()
-
-app = Flask(__name__)
 moment = Moment(app)
-app.config.from_object('config')
-
-
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-db = SQLAlchemy(app)
-Migrate(app, db)
-
-# TODO: connect to a local postgresql database
-
-#----------------------------------------------------------------------------#
-# # Models.
-# #----------------------------------------------------------------------------#
-
-# # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-
-
-# class Show(Base):
-#     __tablename__ = 'Shows'
-#     id = Column(Integer, primary_key=True)
-#     venue_id = Column(Integer,  ForeignKey(
-#         'Venues.id'))
-#     artist_id = Column(Integer,  ForeignKey(
-#         'Artists.id'))
-#     start_time = Column(String(), nullable=False)
-#     artist = relationship(
-#         "Artist", back_populates="venues")
-#     venue = relationship("Venue", back_populates="artists")
-
-
-# class Venue(Base):
-#     __tablename__ = 'Venues'
-
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String(), nullable=False)
-#     city = Column(String(120), nullable=False)
-#     state = Column(String(120), nullable=False)
-#     address = Column(String(120), nullable=False)
-#     phone = Column(String(120), nullable=False)
-#     genres = Column(String(120), nullable=False)
-#     image_link = Column(String(600), nullable=False)
-#     facebook_link = Column(String(120), nullable=False)
-#     website_link = Column(String(120), nullable=False)
-#     seeking_talent = Column(Boolean(), default=False)
-#     seeking_description = Column(String(300), nullable=False)
-#     artists = relationship("Show",
-#                            back_populates="venue", lazy="dynamic")
-#     # TODO: implement any missing fields, as a database migration using Flask-Migrate
-# # Venue(name="123",city= "qdf",state=" AL",address="azxscv",phone="zxc",genres= "Blues",facebook_link= "zx",image_link="zxc",website_link= "zxc v",seeking_talent=" y",seeking_description= "zaxsc")
-
-
-# class Artist(Base):
-#     __tablename__ = 'Artists'
-
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String(), nullable=False)
-#     city = Column(String(120), nullable=False)
-#     state = Column(String(120), nullable=False)
-#     phone = Column(String(120), nullable=False)
-#     genres = Column(String(120), nullable=False)
-#     image_link = Column(String(600), nullable=False)
-#     facebook_link = Column(String(120), nullable=False)
-#     website_link = Column(String(120), nullable=False)
-#     seeking_venue = Column(Boolean, default=False)
-#     seeking_description = Column(String(300), nullable=False)
-#     venues = relationship(
-#         "Show", back_populates="artist", lazy="dynamic")
-
-# TODO: implement any missing fields, as a database migration using Flask-Migrate
-
-#----------------------------------------------------------------------------#
-# Filters.
-#----------------------------------------------------------------------------#
-
-
-# Base.metadata.create_all(engine)
-# session.commit()
 
 
 def format_datetime(value, format='medium'):
@@ -143,11 +65,12 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
-    return render_template('pages/home.html')
-
-
+    venues = session.query(Venue).order_by("id").limit(10).all()
+    artists = session.query(Artist).order_by("id").limit(10).all()
+    return render_template('pages/home.html', venues=venues, artists=artists)
 #  Venues
 #  ----------------------------------------------------------------
+
 
 @app.route('/venues')
 def venues():
@@ -302,13 +225,16 @@ def show_venue(venue_id):
 def create_venue_submission():
     # TODO: insert form data as a new Venue record in the db, instead
     # TODO: modify data to be the data object returned from db insertion
+    venueform = VenueForm(request.form)
 
     seek_talent = False
+    err_message = null
     try:
         seek_talent = True if request.form['seeking_talent'] == 'y' else False
 
     except:
         seek_talent = False
+        print(sys.exc_info())
 
     finally:
         err = False
@@ -327,15 +253,18 @@ def create_venue_submission():
             session.add(venue)
             session.commit()
 
-        except:
+        except ValueError as e:
             session.rollback()
             err = True
+            err_message = e
             print(sys.exc_info())
 
         finally:
             session.close()
             if err:
-                abort()
+
+                flash(
+                    'Venue ' + err_message + ' was successfully listed!')
             else:
 
                 # on successful db insert, flash success
@@ -501,7 +430,7 @@ def show_artist(artist_id):
 
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-    form = ArtistForm()
+    form = ArtistForm(request.form)
     artist_obj = session.query(Artist).get(artist_id)
 
     artist = {
@@ -568,7 +497,7 @@ def edit_artist_submission(artist_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
-    form = VenueForm()
+    form = VenueForm(request.form)
     # need toedit the venue form
     # good err
     venue = session.query(Venue).get(venue_id)
@@ -640,7 +569,7 @@ def edit_venue_submission(venue_id):
 
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
-    form = ArtistForm()
+    form = ArtistForm(request.form)
     return render_template('forms/new_artist.html', form=form)
 
 
@@ -657,9 +586,11 @@ def create_artist_submission():
         seek_venue = True
     except:
         seek_venue = False
+        print(sys.exc_info())
 
     finally:
         err = False
+        err_message = null
         try:
             artist = Artist(
                 name=request.form['name'],
@@ -678,15 +609,17 @@ def create_artist_submission():
             session.add(artist)
             session.commit()
 
-        except:
+        except ValueError as e:
             session.rollback()
             err = True
-            print(sys.exc_info())
+            print(e)
+            err_message = e
 
         finally:
             session.close()
             if err:
-                abort()
+                flash('Artist ' +
+                      err_message + ' was successfully listed!')
             else:
 
                 # on successful db insert, flash success
@@ -738,7 +671,7 @@ def create_shows():
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
     # TODO: insert form data as a new Show record in the db, instead
-
+    err_message = null
     err = False
     try:
 
@@ -753,15 +686,18 @@ def create_show_submission():
         session.add(show)
         session.commit()
 
-    except:
+    except ValueError as e:
         session.rollback()
         err = True
+        err_message = e
         print(sys.exc_info())
 
     finally:
         session.close()
         if err:
-            abort()
+            flash('Error '+err_message +
+                  ' experience and show could not be listed successfuly')
+
         else:
             # on successful db insert, flash success
             flash('Show was successfully listed!')

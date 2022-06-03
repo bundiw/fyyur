@@ -6,28 +6,39 @@
 # import os
 
 from unittest.mock import Base
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import (
-    Boolean, 
-    Column, 
-    ForeignKey, 
-    Integer, 
-    String, 
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
     create_engine
-    )
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from flask_migrate import Migrate
 
 # Make the DeclarativeMeta
+
+app = Flask(__name__)
+app.config.from_object('config')
+db = SQLAlchemy(app)
+Migrate(app, db)
+
 Base = declarative_base()
-engine = create_engine(
-    "postgresql://postgres:password@localhost:5432/fyyur",
-    future=True, 
-    echo=True)
 
-# SECRET_KEY = os.urandom(32)
-# # Grabs the folder where the script runs.
-# basedir = os.path.abspath(os.path.dirname(__file__))
+engine = create_engine('postgresql://postgres:password@localhost:5432/fyyur')
 
+
+# TODO: connect to a local postgresql database
+
+#----------------------------------------------------------------------------#
+# # Models.
+# #----------------------------------------------------------------------------#
+
+# # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 class Show(Base):
     __tablename__ = 'shows'
@@ -60,7 +71,6 @@ class Venue(Base):
     artists = relationship("Show",
                            back_populates="venue", lazy="dynamic")
     # TODO: implement any missing fields, as a database migration using Flask-Migrate
-# Venue(name="123",city= "qdf",state=" AL",address="azxscv",phone="zxc",genres= "Blues",facebook_link= "zx",image_link="zxc",website_link= "zxc v",seeking_talent=" y",seeking_description= "zaxsc")
 
 
 class Artist(Base):
