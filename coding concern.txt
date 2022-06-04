@@ -1,0 +1,45 @@
+  Sample code to update a record
+  
+  venueForm = VenueForm(request.form)
+    err_message = null
+    err = False
+
+    seek_talent = False
+    try:
+        seek_talent = True if request.form['seeking_talent'] == 'y' else False
+
+    except:
+        pass
+
+    finally:
+
+        try:
+  
+  try:
+
+      venue = Venue()
+      db_venue = session.query(Venue).get(venue_id)
+      venueForm.populate_obj(venue)
+      db_venue.name = venue.name
+      db_venue.city = venue.city
+      db_venue.state = venue.state
+      db_venue.address = venue.address
+      db_venue.phone = venue.phone
+      db_venue.genres = venue.genres
+      db_venue.facebook_link = venue.facebook_link
+      db_venue.image_link = venue.image_link
+      db_venue.website_link = venue.website_link
+      db_venue.seeking_talent = seek_talent
+      db_venue.seeking_description = venue.seeking_description
+
+      session.commit()
+      
+      
+      The above code is used to update a record, my question is :
+      On populating form value from venueForm into venue obj as (venueForm.populate_obj(venue))
+      Is there a way we can update the venue object without extracting every column at a time like
+      do the language suport object initialisation by directly assigning the object with similar object term of structure??
+      
+      Thank you.
+      
+      
