@@ -130,13 +130,13 @@ class VenueForm(Form):
         'facebook_link', validators=[URL()]
     )
     website_link = URLField(
-        'website_link'
+        'website_link', validators=[URL()]
     )
 
     seeking_talent = BooleanField('seeking_talent')
 
     seeking_description = StringField(
-        'seeking_description', validators=[Length(max=300)]
+        'seeking_description', validators=[DataRequired(), Length(max=300)]
     )
 
 
@@ -239,8 +239,8 @@ class ArtistForm(Form):
         ]
     )
     facebook_link = URLField(
-        # TODO implement enum restriction
-        'facebook_link')
+
+        'facebook_link', validators=[DataRequired()])
 
     website_link = URLField(
         'website_link'
@@ -249,5 +249,5 @@ class ArtistForm(Form):
     seeking_venue = BooleanField('seeking_venue')
 
     seeking_description = StringField(
-        'seeking_description', validators=[Length(max=300)]
+        'seeking_description', validators=[DataRequired(), Length(max=300)]
     )

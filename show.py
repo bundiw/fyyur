@@ -12,7 +12,7 @@ from model import Artist, Show, Venue, app, session
 @app.route('/shows')
 def shows():
     # displays list of shows at /shows
-    
+
     data = []
     shows = session.query(Show)
     for show in shows:
@@ -51,6 +51,8 @@ def create_show_submission():
     try:
         show = Show()
         showform.populate_obj(show)
+        print(showform)
+
         session.add(show)
         session.commit()
 

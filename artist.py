@@ -83,8 +83,9 @@ def show_artist(artist_id):
         past_shows = []
         for index in range(0, len(upcomming_shows_dict)):
 
-            venue_id = upcomming_shows_dict[index].id
+            venue_id = upcomming_shows_dict[index].venue_id
             start_time = upcomming_shows_dict[index].start_time
+
             venues = session.query(Venue).get(venue_id)
 
             venue_name = venues.name
@@ -160,38 +161,55 @@ def edit_artist(artist_id):
     }
     # print(json.dumps(artist))
 
-    # TODO: populate form with fields from artist with ID <artist_id>
-
     return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-    # TODO: take values from the form submitted, and update existing
-    # artist record with ID <artist_id> using the new attributes
-    artistForm = ArtistForm()
+
+    artistForm = ArtistForm(request.form)
     err_message = null
     err = False
+    seek_venue = False
+    artist = Artist()
     try:
-        artist = Artist()
-        artistForm.populate_obj(artist)
-        db_ob_artist = session.quer(Artist).get(artist_id)
-        db_ob_artist = artist
-        session.add(db_ob_artist)
-        session.commit()
+        seek_venue = True if request.form['seeking_venue'] == 'y' else False
 
-    except ValueError as e:
-        session.rollback()
-        err = True
-        err_message = e
-        print(sys.exc_info())
+    except:
+        pass
+
     finally:
-        session.close()
-        if err:
-            flash("Artist details could not be Editted! Error: "+err_message)
-        else:
 
-            return redirect(url_for('show_artist', artist_id=artist_id))
+        try:
+
+            artistForm.populate_obj(artist)
+            db_ob_artist = session.query(Artist).get(artist_id)
+            db_ob_artist.name = artist.name
+            db_ob_artist.city = artist.city
+            db_ob_artist.state = artist.state
+            db_ob_artist.phone = artist.phone
+            db_ob_artist.genres = artist.genres
+            db_ob_artist.image_link = artist.image_link
+            db_ob_artist.facebook_link = artist.facebook_link
+            db_ob_artist.website_link = artist.website_link
+            db_ob_artist.seeking_venue = seek_venue
+            db_ob_artist.seeking_description = artist.seeking_description
+
+            session.commit()
+
+        except ValueError as e:
+            session.rollback()
+            err = True
+            err_message = e
+            print(sys.exc_info())
+        finally:
+            session.close()
+            if err:
+                flash("Artist details could not be Editted! Error: "+err_message)
+            else:
+                flash('Artist Details edited  successfully')
+
+                return redirect(url_for('show_artist', artist_id=artist_id))
 
 
 @app.route('/artists/create', methods=['GET'])

@@ -1,11 +1,12 @@
 from datetime import datetime
+import json
 import sys
 from flask import flash, redirect, render_template, request, url_for
 from sqlalchemy import null
 
 from forms import VenueForm
 
-from model import Artist, Show, Venue, app, session
+from model import Show, Venue, app, session
 
 
 #  Venues
@@ -14,19 +15,17 @@ from model import Artist, Show, Venue, app, session
 
 @app.route('/venues')
 def venues():
-    # TODO: replace with real venues data.
-    #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
     data = []
     places = session.query(Venue).distinct("city", "state")
     for place in places:
-        #print(place.city, place.state)
+        # print(place.city, place.state)
         city = place.city
         state = place.state
         venues = []
         for venue in session.query(Venue).filter_by(city=city, state=state):
             upcoming_shows = session.query(
                 Show).filter_by(venue_id=venue.id).count()
-            #print(type(upcoming_shows), "good")
+            # print(type(upcoming_shows), "good")
             venues.append({
                 "id": venue.id,
                 "name": venue.name,
@@ -72,7 +71,7 @@ def search_venues():
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
     # shows the venue page with the given venue_id
-    
+
     venue = session.query(
         Venue
     ).get(venue_id)
@@ -146,7 +145,7 @@ def create_venue_form():
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
-   
+
     message = "success"
     err_message = null
     try:
@@ -173,24 +172,41 @@ def delete_venue(venue_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
     form = VenueForm(request.form)
-    # need toedit the venue form
-    # good err
-    db_ob_venue = session.query(Venue).get(venue_id)
-    venue = []
-    venue.append({
-        "id": venue.id,
-        "name": venue.name,
-        "genres": venue.genres,
-        "address": venue.address,
-        "city": venue.city,
-        "state": venue.state,
-        "facebook_link": venue.facebook_link,
-        "seeking_talent": venue.seeking_talent,
-        "seeking_description": venue.seeking_description,
-        "image_link": venue.image_link
-    })
+    ob_venue = session.query(Venue).get(venue_id)
 
-    return render_template('forms/edit_venue.html', form=form, venue=venue)
+    # need toedit the venue form
+    err_message = null
+    err = False
+    data = {}
+    try:
+
+        data = {
+            "id": ob_venue.id,
+            "name": ob_venue.name,
+            "genres": ob_venue.genres,
+            "address": ob_venue.address,
+            "city": ob_venue.city,
+            "state": ob_venue.state,
+            "facebook_link": ob_venue.facebook_link,
+            "seeking_talent": True if ob_venue.seeking_talent == 'f' else False,
+            "seeking_description": ob_venue.seeking_description,
+            "image_link": ob_venue.image_link
+        }
+
+    except ValueError as e:
+        err_message = e
+        err = True
+        print(sys.exc_info())
+
+    finally:
+        if err:
+            flash('Error was encountered! Error:' + err_message)
+            return redirect(url_for('not_found_error'))
+
+        else:
+            venue = data
+
+            return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
@@ -198,25 +214,47 @@ def edit_venue_submission(venue_id):
     venueForm = VenueForm(request.form)
     err_message = null
     err = False
+
+    seek_talent = False
     try:
+        seek_talent = True if request.form['seeking_talent'] == 'y' else False
 
-        venue = Venue()
-        db_venue = session.query(Venue).get(venue_id)
-        venueForm.populate_obj(venue)
-        db_venue = venue
-        session.add(db_venue)
-
-        session.commit()
-
-    except ValueError as e:
-        err = True
-        err_message = e
-        session.rollback()
+    except:
+        pass
 
     finally:
-        session.close()
-        if err:
-            flash('Venue Details could not be edited '+err_message)
-        else:
 
-            return redirect(url_for('show_venue', venue_id=venue_id))
+        try:
+
+            venue = Venue()
+            db_venue = session.query(Venue).get(venue_id)
+            venueForm.populate_obj(venue)
+            db_venue.name = venue.name
+            db_venue.city = venue.city
+            db_venue.state = venue.state
+            db_venue.address = venue.address
+            db_venue.phone = venue.phone
+            db_venue.genres = venue.genres
+            db_venue.facebook_link = venue.facebook_link
+            db_venue.image_link = venue.image_link
+            db_venue.website_link = venue.website_link
+            db_venue.seeking_talent = seek_talent
+            db_venue.seeking_description = venue.seeking_description
+
+            session.commit()
+
+        except ValueError as e:
+            err = True
+            err_message = e
+            print(err_message)
+            session.rollback()
+
+        finally:
+            session.close()
+            if err:
+                flash('Venue Details could not be edited '+err_message)
+                return redirect(url_for('not_found_error'))
+            else:
+                flash('Venue Details edited  successfully')
+
+                return redirect(url_for('show_venue', venue_id=venue_id))
