@@ -19,6 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from flask_migrate import Migrate
+from sqlalchemy.orm import sessionmaker
 
 # Make the DeclarativeMeta
 
@@ -30,7 +31,9 @@ Migrate(app, db)
 Base = declarative_base()
 
 engine = create_engine('postgresql://postgres:password@localhost:5432/fyyur')
-
+# session = Session(bind=engine)
+Session = sessionmaker(bind=engine)
+session = Session()
 
 # TODO: connect to a local postgresql database
 
@@ -39,6 +42,7 @@ engine = create_engine('postgresql://postgres:password@localhost:5432/fyyur')
 # #----------------------------------------------------------------------------#
 
 # # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+
 
 class Show(Base):
     __tablename__ = 'shows'

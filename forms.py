@@ -1,22 +1,14 @@
-
-from dataclasses import field
 from datetime import datetime
-from email import message
-from wsgiref.validate import validator
-
-
 from flask_wtf import Form
-from sqlalchemy import values
-
 from wtforms import (
-        StringField,
-        URLField,
-        SelectField, 
-        SelectMultipleField,
-        DateTimeField,
-        BooleanField,
-        IntegerField
-        )
+    StringField,
+    URLField,
+    SelectField,
+    SelectMultipleField,
+    DateTimeField,
+    BooleanField,
+    IntegerField
+)
 from wtforms.validators import DataRequired, Length, URL, NumberRange
 
 
@@ -101,7 +93,10 @@ class VenueForm(Form):
         'address', validators=[DataRequired(), Length(min=4)]
     )
     phone = IntegerField(
-        'phone', validators=[DataRequired(), NumberRange(min=10000000, message='Please enter a valid Phone Number')]
+        'phone',
+        validators=[DataRequired(),
+                    NumberRange(min=10000000,
+                    message='Please enter a valid Phone Number')]
     )
     image_link = URLField(
         'image_link'
@@ -208,10 +203,14 @@ class ArtistForm(Form):
             ('WY', 'WY'),
         ]
     )
+
     phone = IntegerField(
-        # TODO implement validation logic for state
-        'phone', validators=[NumberRange(min=10000000, max=100000000000)]
+        'phone',
+        validators=[DataRequired(),
+                    NumberRange(min=10000000,
+                    message='Please enter a valid Phone Number')]
     )
+
     image_link = URLField(
         'image_link'
     )
